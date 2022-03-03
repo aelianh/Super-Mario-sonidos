@@ -1,50 +1,305 @@
-[api-updater (non-obsolete-error-filter)] 13/01/2022 13:49:25 : Starting C:/Program Files/Unity/Hub/Editor/2020.3.14f1/Editor/Data/Tools/ScriptUpdater/APIUpdater.NonObsoleteApiUpdaterDetector.exe
-[api-updater (non-obsolete-error-filter)] 
-----------------------------------
-jit/startup time      : 685,3127ms
-moved types parse time: 59ms
-candidates parse time : 1ms
-C# parse time         : 602ms
-candidates check time : 31ms
-console write time    : 0ms
+          m_LastDirtyIndex = clip.DirtyIndex;
+                }
+                m_ClipViewDirty |= trackRectChanged;
+            }
+        }
 
-[api-updater (non-obsolete-error-filter)] 13/01/2022 13:49:55 : Starting C:/Program Files/Unity/Hub/Editor/2020.3.14f1/Editor/Data/Tools/ScriptUpdater/APIUpdater.NonObsoleteApiUpdaterDetector.exe
-[api-updater (non-obsolete-error-filter)] 
-----------------------------------
-jit/startup time      : 99,7172ms
-moved types parse time: 54ms
-candidates parse time : 1ms
-C# parse time         : 186ms
-candidates check time : 29ms
-console write time    : 0ms
+        void ResetClipChanged()
+        {
+            if (Event.current.type == EventType.Repaint)
+                m_ClipViewDirty = false;
+        }
 
-[api-updater (non-obsolete-error-filter)] 13/01/2022 13:53:45 : Starting C:/Program Files/Unity/Hub/Editor/2020.3.14f1/Editor/Data/Tools/ScriptUpdater/APIUpdater.NonObsoleteApiUpdaterDetector.exe
-[api-updater (non-obsolete-error-filter)] 
-----------------------------------
-jit/startup time      : 93,6536ms
-moved types parse time: 53ms
-candidates parse time : 1ms
-C# parse time         : 189ms
-candidates check time : 29ms
-console write time    : 0ms
+        GUIStyle GetExtrapolationIcon(TimelineClip.ClipExtrapolation mode)
+        {
+            GUIStyle extrapolationIcon = null;
 
-[api-updater (non-obsolete-error-filter)] 20/01/2022 12:55:16 : Starting C:/Program Files/Unity/Hub/Editor/2020.3.14f1/Editor/Data/Tools/ScriptUpdater/APIUpdater.NonObsoleteApiUpdaterDetector.exe
-[api-updater (non-obsolete-error-filter)] 
-----------------------------------
-jit/startup time      : 894,3934ms
-moved types parse time: 61ms
-candidates parse time : 1ms
-C# parse time         : 611ms
-candidates check time : 30ms
-console write time    : 1ms
+            switch (mode)
+            {
+                case TimelineClip.ClipExtrapolation.None: return null;
+                case TimelineClip.ClipExtrapolation.Hold: extrapolationIcon = m_Styles.extrapolationHold; break;
+                case TimelineClip.ClipExtrapolation.Loop: extrapolationIcon = m_Styles.extrapolationLoop; break;
+                case TimelineClip.ClipExtrapolation.PingPong: extrapolationIcon = m_Styles.extrapolationPingPong; break;
+                case TimelineClip.ClipExtrapolation.Continue: extrapolationIcon = m_Styles.extrapolationContinue; break;
+            }
 
-[api-updater (non-obsolete-error-filter)] 20/01/2022 12:57:11 : Starting C:/Program Files/Unity/Hub/Editor/2020.3.14f1/Editor/Data/Tools/ScriptUpdater/APIUpdater.NonObsoleteApiUpdaterDetector.exe
-[api-updater (non-obsolete-error-filter)] 
-----------------------------------
-jit/startup time      : 77,7862ms
-moved types parse time: 55ms
-candidates parse time : 1ms
-C# parse time         : 191ms
-candidates check time : 29ms
-console write time    : 0ms
+            return extrapolationIcon;
+        }
 
+        Rect GetPreExtrapolationBounds(Rect trackRect, Rect clipRect, GUIStyle icon)
+        {
+            float x = clipRect.xMin - (icon.fixedWidth + 10.0f);
+            float y = trackRect.yMin + (trackRect.height - icon.fixedHeight) / 2.0f;
+
+            if (previousClip != null)
+            {
+                float distance = Mathf.Abs(treeViewRect.xMin - previousClip.treeViewRect.xMax);
+
+                if (distance < icon.fixedWidth)
+                    return new Rect(0.0f, 0.0f, 0.0f, 0.0f);
+
+                if (distance < icon.fixedWidth + 20.0f)
+                {
+                    float delta = (distance - icon.fixedWidth) / 2.0f;
+                    x = clipRect.xMin - (icon.fixedWidth + delta);
+                }
+            }
+
+            return new Rect(x, y, icon.fixedWidth, icon.fixedHeight);
+        }
+
+        Rect GetPostExtrapolationBounds(Rect trackRect, Rect clipRect, GUIStyle icon)
+        {
+            float x = clipRect.xMax + 10.0f;
+            float y = trackRect.yMin + (trackRect.height - icon.fixedHeight) / 2.0f;
+
+            if (nextClip != null)
+            {
+                float distance = Mathf.Abs(nextClip.treeViewRect.xMin - treeViewRect.xMax);
+
+                if (distance < icon.fixedWidth)
+                    return new Rect(0.0f, 0.0f, 0.0f, 0.0f);
+
+                if (distance < icon.fixedWidth + 20.0f)
+                {
+                    float delta = (distance - icon.fixedWidth) / 2.0f;
+                    x = clipRect.xMax + delta;
+                }
+            }
+
+            return new Rect(x, y, icon.fixedWidth, icon.fixedHeight);
+        }
+
+        static void DrawExtrapolationIcon(Rect rect, GUIStyle icon)
+        {
+            GUI.Label(rect, GUIContent.none, icon);
+        }
+
+        void DrawExtrapolation(Rect trackRect, Rect clipRect)
+        {
+            if (clip.hasPreExtrapolation)
+            {
+                GUIStyle icon = GetExtrapolationIcon(clip.preExtrapolationMode);
+
+                if (icon != null)
+                {
+                    Rect iconBounds = GetPreExtrapolationBounds(trackRect, clipRect, icon);
+
+                    if (iconBounds.width > 1 && iconBounds.height > 1)
+                        DrawExtrapolationIcon(iconBounds, icon);
+                }
+            }
+
+            if (clip.hasPostExtrapolation)
+            {
+                GUIStyle icon = GetExtrapolationIcon(clip.postExtrapolationMode);
+
+                if (icon != null)
+                {
+                    Rect iconBounds = GetPostExtrapolationBounds(trackRect, clipRect, icon);
+
+                    if (iconBounds.width > 1 && iconBounds.height > 1)
+                        DrawExtrapolationIcon(iconBounds, icon);
+                }
+            }
+        }
+
+        static Rect ProjectRectOnTimeline(Rect rect, Rect trackRect, WindowState state)
+        {
+            Rect newRect = rect;
+            // transform clipRect into pixel-space
+            newRect.x *= state.timeAreaScale.x;
+            newRect.width *= state.timeAreaScale.x;
+
+            newRect.x += state.timeAreaTranslation.x + trackRect.xMin;
+
+            // adjust clipRect height and vertical centering
+            const int clipPadding = 2;
+            newRect.y = trackRect.y + clipPadding;
+            newRect.height = trackRect.height - (2 * clipPadding);
+            return newRect;
+        }
+
+        void CalculateLoopRects(Rect trackRect, WindowState state)
+        {
+            if (!m_ClipViewDirty)
+                return;
+
+            m_LoopRects.Clear();
+            if (clip.duration < WindowState.kTimeEpsilon)
+                return;
+
+            var times = TimelineHelpers.GetLoopTimes(clip);
+            var loopDuration = TimelineHelpers.GetLoopDuration(clip);
+            m_MinLoopIndex = -1;
+
+            // we have a hold, no need to compute all loops
+            if (!supportsLooping)
+            {
+                if (times.Length > 1)
+                {
+                    var t = times[1];
+                    float loopTime = (float)(clip.duration - t);
+                    m_LoopRects.Add(ProjectRectOnTimeline(new Rect((float)(t + clip.start), 0, loopTime, 0), trackRect, state));
+                }
+                return;
+            }
+
+            var range = state.timeAreaShownRange;
+            var visibleStartTime = range.x - clip.start;
+            var visibleEndTime = range.y - clip.start;
+
+            for (int i = 1; i < times.Length; i++)
+            {
+                var t = times[i];
+
+                // don't draw off screen loops
+                if (t > visibleEndTime)
+                    break;
+
+                float loopTime = Mathf.Min((float)(clip.duration - t), (float)loopDuration);
+                var loopEnd = t + loopTime;
+
+                if (loopEnd < visibleStartTime)
+                    continue;
+
+                m_LoopRects.Add(ProjectRectOnTimeline(new Rect((float)(t + clip.start), 0, loopTime, 0), trackRect, state));
+
+                if (m_MinLoopIndex == -1)
+                    m_MinLoopIndex = i;
+            }
+        }
+
+        public override Rect RectToTimeline(Rect trackRect, WindowState state)
+        {
+            var offsetFromTimeSpaceToPixelSpace = state.timeAreaTranslation.x + trackRect.xMin;
+
+            var start = (float)(DiscreteTime)clip.start;
+            var end = (float)(DiscreteTime)clip.end;
+
+            return Rect.MinMaxRect(
+                Mathf.Round(start * state.timeAreaScale.x + offsetFromTimeSpaceToPixelSpace), Mathf.Round(trackRect.yMin),
+                Mathf.Round(end * state.timeAreaScale.x + offsetFromTimeSpaceToPixelSpace), Mathf.Round(trackRect.yMax)
+            );
+        }
+
+        public IEnumerable<Edge> SnappableEdgesFor(IAttractable attractable, ManipulateEdges manipulateEdges)
+        {
+            var edges = new List<Edge>();
+
+            bool canAddEdges = !parent.muted;
+
+            if (canAddEdges)
+            {
+                // Hack: Trim Start in Ripple mode should not have any snap point added
+                if (EditMode.editType == EditMode.EditType.Ripple && manipulateEdges == ManipulateEdges.Left)
+                    return edges;
+
+                if (attractable != this)
+                {
+                    if (EditMode.editType == EditMode.EditType.Ripple)
+                    {
+                        bool skip = false;
+
+                        // Hack: Since Trim End and Move in Ripple mode causes other snap point to move on the same track (which is not supported), disable snapping for this special cases...
+                        // TODO Find a proper way to have different snap edges for each edit mode.
+                        if (manipulateEdges == ManipulateEdges.Right)
+                        {
+                            var otherClipGUI = attractable as TimelineClipGUI;
+                            skip = otherClipGUI != null && otherClipGUI.parent == parent;
+                        }
+                        else if (manipulateEdges == ManipulateEdges.Both)
+                        {
+                            var moveHandler = attractable as MoveItemHandler;
+                            skip = moveHandler != null && moveHandler.movingItems.Any(clips => clips.targetTrack == clip.parentTrack && clip.start >= clips.start);
+                        }
+
+                        if (skip)
+                            return edges;
+                    }
+
+                    AddEdge(edges, clip.start);
+                    AddEdge(edges, clip.end);
+                }
+                else
+                {
+                    if (manipulateEdges == ManipulateEdges.Right)
+                    {
+                        var d = TimelineHelpers.GetClipAssetEndTime(clip);
+
+                        if (d < double.MaxValue)
+                        {
+                            if (clip.SupportsLooping())
+                            {
+                                var l = TimelineHelpers.GetLoopDuration(clip);
+
+                                var shownTime = TimelineWindow.instance.state.timeAreaShownRange;
+                                do
+                                {
+                                    AddEdge(edges, d, false);
+                                    d += l;
+                                }
+                                while (d < shownTime.y);
+                            }
+                            else
+                            {
+                                AddEdge(edges, d, false);
+                            }
+                        }
+                    }
+
+                    if (manipulateEdges == ManipulateEdges.Left)
+                    {
+                        var clipInfo = AnimationClipCurveCache.Instance.GetCurveInfo(clip.animationClip);
+                        if (clipInfo != null && clipInfo.keyTimes.Any())
+                            AddEdge(edges, clip.FromLocalTimeUnbound(clipInfo.keyTimes.Min()), false);
+                    }
+                }
+            }
+            return edges;
+        }
+
+        public bool ShouldSnapTo(ISnappable snappable)
+        {
+            return true;
+        }
+
+        bool ShowDrillIcon(PlayableDirector resolver)
+        {
+            if (!m_ShowDrillIcon.HasValue || TimelineWindow.instance.hierarchyChangedThisFrame)
+            {
+                var nestable = m_ClipEditor.supportsSubTimelines;
+                m_ShowDrillIcon = nestable && resolver != null;
+                if (m_ShowDrillIcon.Value)
+                {
+                    s_TempSubDirectors.Clear();
+                    try
+                    {
+                        m_ClipEditor.GetSubTimelines(clip, resolver, s_TempSubDirectors);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+
+                    m_ShowDrillIcon &= s_TempSubDirectors.Count > 0;
+                }
+            }
+
+            return m_ShowDrillIcon.Value;
+        }
+
+        static void AddEdge(List<Edge> edges, double time, bool showEdgeHint = true)
+        {
+            var shownTime = TimelineWindow.instance.state.timeAreaShownRange;
+            if (time >= shownTime.x && time <= shownTime.y)
+                edges.Add(new Edge(time, showEdgeHint));
+        }
+
+        public void SelectCurves()
+        {
+            SelectionManager.SelectOnly(clip);
+            SelectionManager.SelectInlineCurveEditor(this);
+        }
+
+        public void ValidateCurvesSelection
